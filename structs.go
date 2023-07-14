@@ -24,18 +24,35 @@ type Struct struct {
 
 // New returns a new *Struct with the struct s. It panics if the s's kind is
 // not struct.
-func New(s interface{}) *Struct {
-	return &Struct{
+func New(s interface{}, options ...StructOption) *Struct {
+	str := &Struct{
 		raw:     s,
 		value:   strctVal(s),
 		TagName: DefaultTagName,
 	}
+
+	for _, opt := range options {
+		opt.apply(str)
+	}
+
+	return str
 }
 
-// SetTagName allows the explicit setting of the tag name to check for when reflecting a given interface{}
-func (s *Struct) SetTagName(tag string) *Struct {
-	s.TagName = tag
-	return s
+type StructOption interface {
+	apply(*Struct)
+}
+
+// WithTagName explicitly sets of the tag name to check for when reflecting a given interface{}
+func WithTagName(name string) StructOption {
+	return &tagName{name: name}
+}
+
+type tagName struct {
+	name string
+}
+
+func (t *tagName) apply(s *Struct) {
+	s.TagName = t.name
 }
 
 // Map converts the given struct to a map[string]interface{}, where the keys
