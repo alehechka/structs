@@ -199,14 +199,35 @@ func TestMap_OmitEmpty(t *testing.T) {
 
 	m := Map(a)
 
-	_, ok := m["Value"].(map[string]interface{})
+	_, ok := m["Value"].(string)
 	if ok {
 		t.Error("Map should not contain the Value field that is tagged as omitempty")
 	}
 
-	_, ok = m["Time"].(map[string]interface{})
+	_, ok = m["Time"].(time.Time)
 	if ok {
 		t.Error("Map should not contain the Time field that is tagged as omitempty")
+	}
+}
+
+func TestMap_KeepOmittedEmpty(t *testing.T) {
+	type A struct {
+		Name  string
+		Value string    `structs:",omitempty"`
+		Time  time.Time `structs:",omitempty"`
+	}
+	a := A{}
+
+	m := New(a, WithKeepOmittedEmpty()).Map()
+
+	_, ok := m["Value"].(string)
+	if !ok {
+		t.Error("Map should contain the Value field that is tagged as omitempty")
+	}
+
+	_, ok = m["Time"].(time.Time)
+	if !ok {
+		t.Error("Map should contain the Time field that is tagged as omitempty")
 	}
 }
 
