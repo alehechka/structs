@@ -17,9 +17,10 @@ var (
 // Struct encapsulates a struct type to provide several high level functions
 // around the struct.
 type Struct struct {
-	raw     interface{}
-	value   reflect.Value
-	TagName string
+	raw              interface{}
+	value            reflect.Value
+	TagName          string
+	keepOmittedEmpty bool
 }
 
 // New returns a new *Struct with the struct s. It panics if the s's kind is
@@ -53,6 +54,18 @@ type tagName struct {
 
 func (t *tagName) apply(s *Struct) {
 	s.TagName = t.name
+}
+
+// WithKeepOmittedEmpty overrides the default behavior of not including empty fields with the `omitempty` tag
+func WithKeepOmittedEmpty() StructOption {
+	return &keepOmittedEmpty{}
+}
+
+type keepOmittedEmpty struct {
+}
+
+func (k *keepOmittedEmpty) apply(s *Struct) {
+	s.keepOmittedEmpty = true
 }
 
 // Map converts the given struct to a map[string]interface{}, where the keys
@@ -129,7 +142,7 @@ func (s *Struct) FillMap(out map[string]interface{}) {
 
 		// if the value is a zero value and the field is marked as omitempty do
 		// not include
-		if tagOpts.Has("omitempty") {
+		if !s.keepOmittedEmpty && tagOpts.Has("omitempty") {
 			zero := reflect.Zero(val.Type()).Interface()
 			current := val.Interface()
 
@@ -206,7 +219,7 @@ func (s *Struct) Values() []interface{} {
 
 		// if the value is a zero value and the field is marked as omitempty do
 		// not include
-		if tagOpts.Has("omitempty") {
+		if !s.keepOmittedEmpty && tagOpts.Has("omitempty") {
 			zero := reflect.Zero(val.Type()).Interface()
 			current := val.Interface()
 
